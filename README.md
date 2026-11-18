@@ -40,8 +40,6 @@ Proyecto grupal del módulo **Paradigmas de Programación**, programa de Ingenie
 
 ## Requisitos e instalación
 
-## Requisitos e instalación
-
 1. Instalar un **JDK 21 o superior** (recomendado: [Eclipse Temurin](https://adoptium.net)) y configurar la variable `JAVA_HOME`.
 2. Instalar **Maven 3.9 o superior** y agregar su carpeta `bin` al `PATH`.
 3. Verificar la instalación con `java -version` y `mvn -v`.
@@ -50,8 +48,6 @@ Proyecto grupal del módulo **Paradigmas de Programación**, programa de Ingenie
    git clone https://github.com/MauricioOrtizCano/Math_Shop_Rush.git
 
 No es necesario instalar JavaFX ni JUnit: Maven los descarga automáticamente.
-
-## Cómo ejecutar el juego y las pruebas
 
 ## Cómo ejecutar el juego y las pruebas
 
