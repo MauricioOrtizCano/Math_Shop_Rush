@@ -21,31 +21,46 @@ Proyecto grupal del módulo **Paradigmas de Programación**, programa de Ingenie
 
 ## Estado del proyecto
 
-🟡 **Fase 0: preparación del repositorio.**
+🟡 **Fase 1 completada: proyecto base configurado.**
 
 - [x] Propuesta del juego (Entrega 1)
-- [ ] Proyecto base configurado
+- [x] Proyecto base configurado
 - [ ] Modelo y lógica de negocio con pruebas unitarias (Entrega 2)
 - [ ] Interfaz gráfica e integración (Entrega 3)
 - [ ] Sustentación
 
 ## Tecnologías
 
-| Tecnología | Uso |
-|---|---|
-| Java 21 (LTS) | Lenguaje de programación |
-| JavaFX 21 | Interfaz gráfica de usuario |
-| JUnit 5 | Pruebas unitarias |
-| Maven | Construcción del proyecto y gestión de dependencias |
-| Javadoc | Documentación del código |
+| Tecnología | Versión | Uso |
+|---|---|---|
+| Java | 21 (compatible con JDK 21 o superior) | Lenguaje de programación |
+| JavaFX | 21.0.13 | Interfaz gráfica de usuario |
+| JUnit Jupiter | 5.14.4 | Pruebas unitarias |
+| Maven | 3.9 o superior | Construcción del proyecto y dependencias |
 
 ## Requisitos e instalación
 
-*Se completará cuando el proyecto base esté configurado.*
+## Requisitos e instalación
+
+1. Instalar un **JDK 21 o superior** (recomendado: [Eclipse Temurin](https://adoptium.net)) y configurar la variable `JAVA_HOME`.
+2. Instalar **Maven 3.9 o superior** y agregar su carpeta `bin` al `PATH`.
+3. Verificar la instalación con `java -version` y `mvn -v`.
+4. Clonar el repositorio:
+
+   git clone https://github.com/MauricioOrtizCano/Math_Shop_Rush.git
+
+No es necesario instalar JavaFX ni JUnit: Maven los descarga automáticamente.
 
 ## Cómo ejecutar el juego y las pruebas
 
-*Se completará cuando el proyecto base esté configurado.*
+## Cómo ejecutar el juego y las pruebas
+
+Desde la carpeta raíz del proyecto:
+
+| Acción | Comando |
+|---|---|
+| Ejecutar el juego | `mvn clean javafx:run` |
+| Ejecutar las pruebas unitarias | `mvn clean test` |
 
 ## Estructura del proyecto
 
@@ -55,7 +70,13 @@ El proyecto sigue el patrón **Modelo-Vista-Controlador (MVC)**:
 - **Vista**: pantallas y elementos gráficos en JavaFX.
 - **Controlador**: conecta las acciones del jugador en la vista con el modelo.
 
-*El detalle de paquetes se completará cuando el proyecto base esté configurado.*
+| Ruta | Contenido |
+|---|---|
+| `src/main/java/co/edu/poli/mathshoprush/modelo` | Clases del dominio y reglas del juego |
+| `src/main/java/co/edu/poli/mathshoprush/vista` | Pantallas y componentes en JavaFX |
+| `src/main/java/co/edu/poli/mathshoprush/controlador` | Conexión entre la vista y el modelo |
+| `src/main/resources` | Archivos FXML, estilos CSS, imágenes y sonidos |
+| `src/test/java/co/edu/poli/mathshoprush/modelo` | Pruebas unitarias del modelo |
 
 ## Reglas del juego
 
@@ -91,6 +112,7 @@ Mensajes en español, cortos y con un prefijo que indique el tipo de cambio:
 | `test:` | Pruebas | `test: casos de vuelto con caja limitada` |
 | `docs:` | Documentación | `docs: actualizar README` |
 | `refactor:` | Cambios internos sin alterar el comportamiento | `refactor: separar cálculo de vuelto óptimo` |
+| `chore:` | Configuración y mantenimiento del proyecto | `chore: actualizar versión de JavaFX` |
 
 ### Cómo contribuir
 
