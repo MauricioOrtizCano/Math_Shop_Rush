@@ -1,5 +1,9 @@
 /**
- * Contiene las clases del dominio del juego y sus reglas de negocio: dinero, caja, clientes, jornada y niveles. 
- * No depende de JavaFX, lo que permite probarlo de forma aislada con JUnit.
+ * Modelo y lógica de negocio de Math Shop Rush.
+ * <p>
+ * Contiene las clases que representan la tienda (efectivo, productos,
+ * clientes, jornada y partida) sin ninguna dependencia de la interfaz
+ * gráfica, de modo que todas puedan probarse con pruebas unitarias.
+ * </p>
  */
 package co.edu.poli.mathshoprush.modelo;
