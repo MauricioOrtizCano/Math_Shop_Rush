@@ -37,13 +37,13 @@ class JornadaTest {
     }
 
     /**
-     * Crea una jornada de nivel 1 con la base inicial.
+     * Crea una jornada de nivel 1 con la base inicial y la caja fuerte vacía.
      *
      * @param clientes clientes que llegarán
      * @return jornada sin avanzar
      */
     private Jornada nueva(Cliente... clientes) {
-        return nueva(Partida.baseInicial(), Partida.reservaInicialCajaFuerte(), clientes);
+        return nueva(Partida.baseInicial(), new CajaFuerte(), clientes);
     }
 
     /**
@@ -54,7 +54,7 @@ class JornadaTest {
      * @param clientes   clientes que llegarán
      * @return jornada sin avanzar
      */
-    private Jornada nueva(Efectivo caja, Efectivo cajaFuerte, Cliente... clientes) {
+    private Jornada nueva(Efectivo caja, CajaFuerte cajaFuerte, Cliente... clientes) {
         return new Jornada(ConfiguracionNivel.deNivel(1), caja, cajaFuerte, new GeneradorFijo(clientes));
     }
 
@@ -209,25 +209,84 @@ class JornadaTest {
     }
 
     /**
-     * R9a: sin efectivo para el vuelto se puede pedir sencillo.
+     * R9a: al pedir sencillo, el cliente paga el total redondeado al
+     * siguiente múltiplo de $1.000 si la caja puede dar ese vuelto, y gasta
+     * parte de su paciencia.
      */
     @Test
-    void pedirSencilloPermiteDarElVuelto() {
-        Efectivo pobre = new Efectivo();
-        pobre.agregar(Denominacion.MONEDA_1000);
-        Jornada j = nueva(pobre, Partida.reservaInicialCajaFuerte(), clienteBase(1));
+    void pedirSencilloRedondeaElPago() {
+        Efectivo caja = new Efectivo();
+        caja.agregar(Denominacion.MONEDA_500);
+        caja.agregar(Denominacion.MONEDA_200);
+        Cliente c = GeneradorFijo.cliente(1, TOTAL, GeneradorFijo.pago(Denominacion.BILLETE_50000), 60);
+        Jornada j = nueva(caja, new CajaFuerte(), c);
         j.avanzar(1.0);
         j.responderTotal(TOTAL);
         assertFalse(j.puedeDarVuelto());
         j.pedirSencillo();
+        assertEquals(700, j.getClienteActual().getVueltoEsperado());
         assertTrue(j.puedeDarVuelto());
-        assertEquals(1000 + 10000, j.getCaja().total());
         assertEquals(60 - Jornada.FRACCION_PACIENCIA_SENCILLO * 60,
                 j.getClienteActual().getPacienciaActual(), 1e-9);
+        j.ponerEnMostrador(Denominacion.MONEDA_500);
+        j.ponerEnMostrador(Denominacion.MONEDA_200);
+        assertEquals(ResultadoVuelto.CORRECTO_CON_BONO, j.confirmarVuelto());
+    }
+
+    /**
+     * R9a: si la caja tampoco puede dar el vuelto del pago redondeado, el
+     * cliente paga el valor exacto y la venta se completa.
+     */
+    @Test
+    void pedirSencilloPagaExactoSiElRedondeoNoAlcanza() {
+        Cliente c = GeneradorFijo.cliente(1, TOTAL, GeneradorFijo.pago(Denominacion.BILLETE_50000), 60);
+        Jornada j = nueva(new Efectivo(), new CajaFuerte(), c);
+        j.avanzar(1.0);
+        j.responderTotal(TOTAL);
+        j.pedirSencillo();
+        assertEquals(1, j.getClientesAtendidos());
+        assertEquals(TOTAL, j.getGanancias());
+        assertEquals(TOTAL, j.getCaja().total());
+    }
+
+    /**
+     * R9a: si el pago redondeado no es menor que el que ya entregó, el
+     * cliente paga el valor exacto. Con $5.500 para una compra de $5.300,
+     * redondear a $6.000 sería pagar más.
+     */
+    @Test
+    void pedirSencilloPagaExactoSiElRedondeoNoEsMenor() {
+        Cliente c = GeneradorFijo.cliente(1, TOTAL,
+                GeneradorFijo.pago(Denominacion.BILLETE_5000, Denominacion.MONEDA_500), 60);
+        Jornada j = nueva(new Efectivo(), new CajaFuerte(), c);
+        j.avanzar(1.0);
+        j.responderTotal(TOTAL);
+        j.pedirSencillo();
+        assertEquals(1, j.getClientesAtendidos());
+        assertEquals(TOTAL, j.getGanancias());
+        assertEquals(TOTAL, j.getCaja().total());
+    }
+
+    /**
+     * R11: el bono se mide contra el efectivo disponible. Si la caja no
+     * tiene monedas de $200, el vuelto de $4.700 con 5 piezas
+     * ($2.000 + $2.000 + $500 + $100 + $100) es el mínimo posible y recibe
+     * bono, aunque con piezas ilimitadas bastarían 4.
+     */
+    @Test
+    void bonoSegunEfectivoDisponible() {
+        Efectivo caja = new Efectivo();
+        caja.agregar(Denominacion.BILLETE_2000, 2);
+        caja.agregar(Denominacion.MONEDA_500, 1);
+        caja.agregar(Denominacion.MONEDA_100, 2);
+        Jornada j = nueva(caja, new CajaFuerte(), clienteBase(1));
+        j.avanzar(1.0);
+        j.responderTotal(TOTAL);
         j.ponerEnMostrador(Denominacion.BILLETE_2000);
         j.ponerEnMostrador(Denominacion.BILLETE_2000);
         j.ponerEnMostrador(Denominacion.MONEDA_500);
-        j.ponerEnMostrador(Denominacion.MONEDA_200);
+        j.ponerEnMostrador(Denominacion.MONEDA_100);
+        j.ponerEnMostrador(Denominacion.MONEDA_100);
         assertEquals(ResultadoVuelto.CORRECTO_CON_BONO, j.confirmarVuelto());
     }
 
@@ -243,20 +302,23 @@ class JornadaTest {
     }
 
     /**
-     * R9b: sacar de la caja fuerte pasa el efectivo a la caja y consume tiempo.
+     * R9b: sacar de la caja fuerte pasa el efectivo a la caja, descuenta su
+     * valor del saldo y consume tiempo; no se puede retirar más del saldo.
      */
     @Test
     void cajaFuertePasaEfectivoYConsumeTiempo() {
-        Efectivo fuerte = Partida.reservaInicialCajaFuerte();
+        CajaFuerte fuerte = new CajaFuerte();
+        fuerte.depositar(20000);
         Jornada j = nueva(Partida.baseInicial(), fuerte, clienteBase(1));
         double antes = j.getSegundosTranscurridos();
         Efectivo pedido = GeneradorFijo.pago(Denominacion.BILLETE_5000);
         j.sacarDeCajaFuerte(pedido);
         assertEquals(Partida.baseInicial().total() + 5000, j.getCaja().total());
-        assertEquals(1, fuerte.cantidad(Denominacion.BILLETE_5000));
+        assertEquals(15000, j.getSaldoCajaFuerte());
         assertEquals(antes + Jornada.SEGUNDOS_CAJA_FUERTE, j.getSegundosTranscurridos(), 1e-6);
         Efectivo demasiado = GeneradorFijo.pago(Denominacion.BILLETE_50000);
         assertThrows(IllegalArgumentException.class, () -> j.sacarDeCajaFuerte(demasiado));
+        assertEquals(15000, j.getSaldoCajaFuerte());
     }
 
     /**

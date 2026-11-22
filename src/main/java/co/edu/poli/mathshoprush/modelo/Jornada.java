@@ -87,7 +87,7 @@ public class Jornada {
 
     /**
      * Bonificación en pesos por entregar el vuelto con la menor cantidad de
-     * piezas (R11).
+     * piezas posible con el efectivo disponible (R11).
      */
     public static final int BONO_VUELTO_MINIMO = 500;
 
@@ -132,9 +132,10 @@ public class Jornada {
     private final Efectivo caja;
 
     /**
-     * Caja fuerte compartida con la partida (se modifica al retirar dinero).
+     * Caja fuerte compartida con la partida: un saldo en pesos que disminuye
+     * cuando el jugador retira dinero durante la jornada (R9b).
      */
-    private final Efectivo cajaFuerte;
+    private final CajaFuerte cajaFuerte;
 
     /**
      * Efectivo que el jugador ha puesto en el mostrador como vuelto.
@@ -214,11 +215,12 @@ public class Jornada {
      * @param cajaInicial   efectivo con el que abre la caja registradora
      *                      (se copia)
      * @param cajaFuerte    caja fuerte de la partida; esta instancia se
-     *                      modifica cuando el jugador retira dinero
+     *                      comparte y su saldo disminuye cuando el jugador
+     *                      retira dinero
      * @param generador     generador de clientes, no nulo
      * @throws NullPointerException si algún parámetro es nulo
      */
-    public Jornada(ConfiguracionNivel configuracion, Efectivo cajaInicial, Efectivo cajaFuerte,
+    public Jornada(ConfiguracionNivel configuracion, Efectivo cajaInicial, CajaFuerte cajaFuerte,
             GeneradorClientes generador) {
         this.configuracion = Objects.requireNonNull(configuracion, "configuracion");
         this.caja = Objects.requireNonNull(cajaInicial, "cajaInicial").copia();
@@ -431,7 +433,8 @@ public class Jornada {
      * Entrega el vuelto que hay en el mostrador al cliente.
      * <p>
      * Es correcto si su valor es exactamente pago menos total (R8). Si se
-     * usó la menor cantidad de piezas posible hay bonificación (R11). Si es
+     * usó la menor cantidad de piezas posible con el efectivo disponible
+     * (caja más mostrador) hay bonificación (R11). Si es
      * incorrecto el cliente reclama, se lleva su dinero y se va sin
      * completar la compra (R13).
      * </p>
@@ -448,8 +451,9 @@ public class Jornada {
         }
         int esperado = cliente.getVueltoEsperado();
         if (mostrador.total() == esperado) {
-            boolean minimo = mostrador.totalPiezas()
-                    == Efectivo.conMenorCantidadDePiezas(esperado).totalPiezas();
+            Efectivo disponible = caja.copia();
+            disponible.agregarTodo(mostrador);
+            boolean minimo = mostrador.totalPiezas() == disponible.minimoDePiezasPara(esperado).getAsInt();
             mostrador.vaciar();
             if (minimo) {
                 bonificaciones++;
@@ -488,8 +492,11 @@ public class Jornada {
      * Le pide sencillo al cliente cuando en la caja no hay efectivo para dar
      * el vuelto (R9a).
      * <p>
-     * El cliente cambia sus billetes por piezas que sí permiten dar el
-     * vuelto (el valor que paga no cambia) y gasta parte de su paciencia.
+     * El cliente cambia su pago por el total de la compra redondeado al
+     * siguiente múltiplo de $1.000. Si ese pago no es menor que el que había
+     * entregado, o si su vuelto tampoco se puede formar con la caja, paga el
+     * valor exacto y la venta se completa de inmediato. En cualquier caso
+     * gasta parte de su paciencia.
      * </p>
      *
      * @throws IllegalStateException si no hay un cliente esperando el vuelto
@@ -507,31 +514,41 @@ public class Jornada {
         caja.agregarTodo(mostrador);
         mostrador.vaciar();
         caja.quitarTodo(cliente.getPago());
-        Efectivo nuevoPago = Efectivo.conMenorCantidadDePiezas(cliente.getCompra().getTotal());
-        nuevoPago.agregarTodo(Efectivo.conMenorCantidadDePiezas(cliente.getVueltoEsperado()));
+
+        int total = cliente.getCompra().getTotal();
+        int redondeado = (total + 999) / 1000 * 1000;
+        int pagoNuevo = total;
+        if (redondeado < cliente.getPago().total() && caja.puedeFormar(redondeado - total)) {
+            pagoNuevo = redondeado;
+        }
+        Efectivo nuevoPago = Efectivo.conMenorCantidadDePiezas(pagoNuevo);
         cliente.cambiarPago(nuevoPago);
         caja.agregarTodo(nuevoPago);
         cliente.consumirPaciencia(FRACCION_PACIENCIA_SENCILLO * cliente.getPacienciaMaxima());
+        if (cliente.getVueltoEsperado() == 0) {
+            completarVenta(cliente, 0);
+        }
     }
 
     /**
      * Retira efectivo de la caja fuerte y lo pasa a la caja registradora
-     * (R9b). Consume {@link #SEGUNDOS_CAJA_FUERTE} segundos del reloj.
+     * (R9b). El jugador elige las denominaciones, sin superar el saldo
+     * disponible. Consume {@link #SEGUNDOS_CAJA_FUERTE} segundos del reloj;
+     * un pedido vacío no hace nada ni consume tiempo.
      *
-     * @param pedido piezas que se quieren retirar
-     * @throws IllegalArgumentException si la caja fuerte no tiene ese saldo
+     * @param pedido billetes y monedas que se quieren retirar
+     * @throws NullPointerException     si el pedido es nulo
+     * @throws IllegalArgumentException si el valor del pedido supera el
+     *                                  saldo de la caja fuerte
      * @throws IllegalStateException    si la jornada terminó
      */
     public void sacarDeCajaFuerte(Efectivo pedido) {
         verificarEnCurso();
         Objects.requireNonNull(pedido, "pedido");
-        if (!cajaFuerte.contiene(pedido)) {
-            throw new IllegalArgumentException("La caja fuerte no tiene ese saldo disponible");
-        }
         if (pedido.estaVacio()) {
             return;
         }
-        cajaFuerte.quitarTodo(pedido);
+        cajaFuerte.retirar(pedido);
         caja.agregarTodo(pedido);
         avanzarEnPasos(SEGUNDOS_CAJA_FUERTE);
     }
@@ -729,12 +746,12 @@ public class Jornada {
     }
 
     /**
-     * Devuelve una copia del efectivo de la caja fuerte.
+     * Devuelve el dinero disponible en la caja fuerte.
      *
-     * @return copia de la caja fuerte
+     * @return saldo de la caja fuerte, en pesos
      */
-    public Efectivo getCajaFuerte() {
-        return cajaFuerte.copia();
+    public int getSaldoCajaFuerte() {
+        return cajaFuerte.getSaldo();
     }
 
     /**

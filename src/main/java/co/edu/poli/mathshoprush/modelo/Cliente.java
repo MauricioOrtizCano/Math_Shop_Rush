@@ -160,15 +160,25 @@ public class Cliente {
     }
 
     /**
-     * Cambia las piezas con las que paga, manteniendo su valor total
-     * (cuando el jugador le pide sencillo).
+     * Cambia el pago del cliente cuando el jugador le pide sencillo (R9a).
+     * El nuevo pago puede tener menor valor que el anterior (por ejemplo,
+     * el total redondeado al siguiente múltiplo de $1.000, o el valor
+     * exacto), pero debe seguir cubriendo el total de la compra.
      *
-     * @param nuevoPago nuevo efectivo, con el mismo valor que el anterior
-     * @throws IllegalArgumentException si el valor total cambia
+     * @param nuevoPago nuevo efectivo con el que paga, no nulo
+     * @throws NullPointerException     si el nuevo pago es nulo
+     * @throws IllegalArgumentException si el nuevo pago no cubre el total de
+     *                                  la compra o es mayor que el pago
+     *                                  anterior
      */
     public void cambiarPago(Efectivo nuevoPago) {
-        if (nuevoPago.total() != pago.total()) {
-            throw new IllegalArgumentException("El nuevo pago debe tener el mismo valor");
+        Objects.requireNonNull(nuevoPago, "nuevoPago");
+        int valor = nuevoPago.total();
+        if (valor < compra.getTotal()) {
+            throw new IllegalArgumentException("El nuevo pago no cubre el total de la compra");
+        }
+        if (valor > pago.total()) {
+            throw new IllegalArgumentException("El nuevo pago no puede ser mayor que el anterior");
         }
         this.pago = nuevoPago.copia();
         this.redondea = false;
