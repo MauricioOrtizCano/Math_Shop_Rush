@@ -87,7 +87,7 @@ public class Jornada {
 
     /**
      * Bonificación en pesos por entregar el vuelto con la menor cantidad de
-     * piezas (R11).
+     * piezas posible con el efectivo disponible (R11).
      */
     public static final int BONO_VUELTO_MINIMO = 500;
 
@@ -433,7 +433,8 @@ public class Jornada {
      * Entrega el vuelto que hay en el mostrador al cliente.
      * <p>
      * Es correcto si su valor es exactamente pago menos total (R8). Si se
-     * usó la menor cantidad de piezas posible hay bonificación (R11). Si es
+     * usó la menor cantidad de piezas posible con el efectivo disponible
+     * (caja más mostrador) hay bonificación (R11). Si es
      * incorrecto el cliente reclama, se lleva su dinero y se va sin
      * completar la compra (R13).
      * </p>
@@ -450,7 +451,9 @@ public class Jornada {
         }
         int esperado = cliente.getVueltoEsperado();
         if (mostrador.total() == esperado) {
-            boolean minimo = mostrador.totalPiezas() == Efectivo.conMenorCantidadDePiezas(esperado).totalPiezas();
+            Efectivo disponible = caja.copia();
+            disponible.agregarTodo(mostrador);
+            boolean minimo = mostrador.totalPiezas() == disponible.minimoDePiezasPara(esperado).getAsInt();
             mostrador.vaciar();
             if (minimo) {
                 bonificaciones++;

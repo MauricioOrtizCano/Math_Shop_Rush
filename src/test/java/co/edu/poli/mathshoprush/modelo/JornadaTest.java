@@ -232,6 +232,29 @@ class JornadaTest {
     }
 
     /**
+     * R11: el bono se mide contra el efectivo disponible. Si la caja no
+     * tiene monedas de $200, el vuelto de $4.700 con 5 piezas
+     * ($2.000 + $2.000 + $500 + $100 + $100) es el mínimo posible y recibe
+     * bono, aunque con piezas ilimitadas bastarían 4.
+     */
+    @Test
+    void bonoSegunEfectivoDisponible() {
+        Efectivo caja = new Efectivo();
+        caja.agregar(Denominacion.BILLETE_2000, 2);
+        caja.agregar(Denominacion.MONEDA_500, 1);
+        caja.agregar(Denominacion.MONEDA_100, 2);
+        Jornada j = nueva(caja, new CajaFuerte(), clienteBase(1));
+        j.avanzar(1.0);
+        j.responderTotal(TOTAL);
+        j.ponerEnMostrador(Denominacion.BILLETE_2000);
+        j.ponerEnMostrador(Denominacion.BILLETE_2000);
+        j.ponerEnMostrador(Denominacion.MONEDA_500);
+        j.ponerEnMostrador(Denominacion.MONEDA_100);
+        j.ponerEnMostrador(Denominacion.MONEDA_100);
+        assertEquals(ResultadoVuelto.CORRECTO_CON_BONO, j.confirmarVuelto());
+    }
+
+    /**
      * No se puede pedir sencillo si la caja tiene efectivo suficiente.
      */
     @Test

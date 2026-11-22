@@ -3,6 +3,8 @@ package co.edu.poli.mathshoprush.modelo;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Arrays;
+import java.util.OptionalInt;
 
 /**
  * Conjunto de billetes y monedas (cuántas piezas hay de cada denominación).
@@ -228,6 +230,44 @@ public class Efectivo {
             }
         }
         return alcanzable[n];
+    }
+
+    /**
+     * Calcula la menor cantidad de piezas con la que se puede formar
+     * exactamente un monto, usando solo las piezas disponibles (R11).
+     * <p>
+     * A diferencia de {@link #conMenorCantidadDePiezas(int)}, respeta la
+     * cantidad que hay de cada denominación. Resuelve el problema por
+     * programación dinámica sobre múltiplos de $50: cada pieza se procesa
+     * una sola vez, recorriendo los montos de mayor a menor para que no se
+     * pueda usar dos veces.
+     * </p>
+     *
+     * @param monto valor que se quiere formar, en pesos
+     * @return la menor cantidad de piezas, o vacío si el monto es negativo,
+     *         no es múltiplo de $50 o no se puede formar con las piezas
+     *         disponibles
+     */
+    public OptionalInt minimoDePiezasPara(int monto) {
+        if (monto < 0 || monto % 50 != 0) {
+            return OptionalInt.empty();
+        }
+        int n = monto / 50;
+        int infinito = Integer.MAX_VALUE;
+        int[] minimo = new int[n + 1];
+        Arrays.fill(minimo, infinito);
+        minimo[0] = 0;
+        for (Denominacion d : Denominacion.values()) {
+            int unidad = d.getValor() / 50;
+            for (int pieza = 0; pieza < cantidad(d); pieza++) {
+                for (int v = n; v >= unidad; v--) {
+                    if (minimo[v - unidad] != infinito && minimo[v - unidad] + 1 < minimo[v]) {
+                        minimo[v] = minimo[v - unidad] + 1;
+                    }
+                }
+            }
+        }
+        return minimo[n] == infinito ? OptionalInt.empty() : OptionalInt.of(minimo[n]);
     }
 
     /**

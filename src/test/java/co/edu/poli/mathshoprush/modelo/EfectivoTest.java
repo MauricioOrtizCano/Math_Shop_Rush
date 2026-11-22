@@ -1,7 +1,7 @@
 package co.edu.poli.mathshoprush.modelo;
 
 import static org.junit.jupiter.api.Assertions.*;
-
+import java.util.OptionalInt;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -115,5 +115,60 @@ class EfectivoTest {
         assertTrue(f.puedeFormar(1500));
         assertTrue(f.puedeFormar(2500));
         assertFalse(f.puedeFormar(4000));
+    }
+
+    /**
+     * R11: con una caja bien surtida, el mínimo de piezas coincide con el
+     * del algoritmo voraz ($2.000 + $2.000 + $500 + $200).
+     */
+    @Test
+    void minimoDePiezasConCajaSurtida() {
+        Efectivo caja = Partida.baseInicial();
+        assertEquals(OptionalInt.of(4), caja.minimoDePiezasPara(4700));
+    }
+
+    /**
+     * R11: si falta una denominación, el mínimo se calcula con las que hay.
+     * Sin moneda de $1.000, formar $1.000 requiere dos de $500.
+     */
+    @Test
+    void minimoDePiezasSinLaDenominacionIdeal() {
+        Efectivo caja = new Efectivo();
+        caja.agregar(Denominacion.MONEDA_500, 2);
+        assertEquals(OptionalInt.of(2), caja.minimoDePiezasPara(1000));
+    }
+
+    /**
+     * R11: con piezas limitadas el algoritmo voraz falla. Para $600 con una
+     * de $500 y tres de $200, el voraz toma la de $500 y no puede completar;
+     * el mínimo real son las tres de $200.
+     */
+    @Test
+    void minimoDePiezasDondeElVorazFalla() {
+        Efectivo caja = new Efectivo();
+        caja.agregar(Denominacion.MONEDA_500, 1);
+        caja.agregar(Denominacion.MONEDA_200, 3);
+        assertEquals(OptionalInt.of(3), caja.minimoDePiezasPara(600));
+    }
+
+    /**
+     * Si el monto no se puede formar con las piezas disponibles, no hay
+     * resultado.
+     */
+    @Test
+    void minimoDePiezasImposible() {
+        Efectivo caja = new Efectivo();
+        caja.agregar(Denominacion.BILLETE_2000, 1);
+        assertEquals(OptionalInt.empty(), caja.minimoDePiezasPara(500));
+        assertEquals(OptionalInt.empty(), caja.minimoDePiezasPara(-100));
+        assertEquals(OptionalInt.empty(), caja.minimoDePiezasPara(1230));
+    }
+
+    /**
+     * Formar $0 no requiere ninguna pieza, aunque el efectivo esté vacío.
+     */
+    @Test
+    void minimoDePiezasParaCero() {
+        assertEquals(OptionalInt.of(0), new Efectivo().minimoDePiezasPara(0));
     }
 }
