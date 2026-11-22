@@ -1,5 +1,7 @@
 package co.edu.poli.mathshoprush.modelo;
 
+import java.util.Objects;
+
 /**
  * Caja fuerte de la tienda: guarda el dinero acumulado entre jornadas
  * como un saldo en pesos.
@@ -50,5 +52,25 @@ public class CajaFuerte {
             throw new IllegalArgumentException("El monto a depositar debe ser múltiplo de $50");
         }
         this.saldo += valor;
+    }
+
+    /**
+     * Retira efectivo de la caja fuerte, descontando su valor total del
+     * saldo. El jugador elige las denominaciones que quiere, sin superar
+     * el saldo disponible (R9 y R20). Retirar un efectivo vacío no cambia
+     * el saldo.
+     *
+     * @param pedido billetes y monedas que el jugador quiere retirar
+     * @throws NullPointerException     si el pedido es nulo
+     * @throws IllegalArgumentException si el valor del pedido supera el
+     *                                  saldo disponible
+     */
+    public void retirar(Efectivo pedido) {
+        Objects.requireNonNull(pedido, "El pedido no puede ser nulo");
+        int valor = pedido.total();
+        if (valor > this.saldo) {
+            throw new IllegalArgumentException("La caja fuerte no tiene saldo suficiente para ese retiro");
+        }
+        this.saldo -= valor;
     }
 }
