@@ -14,10 +14,10 @@ Proyecto grupal del módulo **Paradigmas de Programación**, programa de Ingenie
 
 | Integrante | Rol |
 |---|---|
-| Cristian Mauricio Ortiz Cano | Líder del proyecto, desarrollo del modelo e integración |
-| Por definir | Por definir |
-| Por definir | Por definir |
-| Por definir | Por definir |
+| Cristian Mauricio Ortiz Cano | Líder del proyecto: configuración del repositorio y del entorno, revisión e integración de código, ajustes del modelo a las reglas del juego |
+| Andres Felipe Ruiz Triviño | Desarrollo del modelo inicial y sus pruebas unitarias |
+| Nicoll | Diagrama de clases y arte del juego |
+| Camila Bayona | Por definir |
 
 ## Estado del proyecto
 
