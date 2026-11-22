@@ -46,14 +46,40 @@ class ClienteTest {
     }
 
     /**
-     * Cambiar el pago exige mantener el mismo valor.
+     * R9a: el cliente puede cambiar su pago por uno de menor valor que siga
+     * cubriendo el total; el vuelto esperado se recalcula.
      */
     @Test
-    void cambiarPagoMantieneElValor() {
-        Cliente c = GeneradorFijo.cliente(1, 1000, GeneradorFijo.pago(Denominacion.BILLETE_2000), 10);
-        c.cambiarPago(GeneradorFijo.pago(Denominacion.MONEDA_1000, Denominacion.MONEDA_1000));
-        assertEquals(2000, c.getPago().total());
+    void cambiarPagoAceptaUnPagoMenorQueCubreElTotal() {
+        Cliente c = GeneradorFijo.cliente(1, 5300, GeneradorFijo.pago(Denominacion.BILLETE_50000), 60);
+        c.cambiarPago(GeneradorFijo.pago(Denominacion.BILLETE_5000, Denominacion.MONEDA_1000));
+        assertEquals(6000, c.getPago().total());
+        assertEquals(700, c.getVueltoEsperado());
+        assertFalse(c.isRedondea());
+    }
+
+    /**
+     * R9a: el nuevo pago no puede ser menor que el total de la compra, y
+     * el pago anterior se conserva si el cambio falla.
+     */
+    @Test
+    void cambiarPagoRechazaUnPagoQueNoCubreElTotal() {
+        Cliente c = GeneradorFijo.cliente(1, 5300, GeneradorFijo.pago(Denominacion.BILLETE_50000), 60);
         assertThrows(IllegalArgumentException.class,
-                () -> c.cambiarPago(GeneradorFijo.pago(Denominacion.MONEDA_1000)));
+                () -> c.cambiarPago(GeneradorFijo.pago(Denominacion.BILLETE_5000)));
+        assertEquals(50000, c.getPago().total());
+    }
+
+    /**
+     * R9a: al pedir sencillo el cliente nunca entrega más de lo que ya había
+     * pagado.
+     */
+    @Test
+    void cambiarPagoRechazaUnPagoMayorQueElAnterior() {
+        Cliente c = GeneradorFijo.cliente(1, 5300,
+                GeneradorFijo.pago(Denominacion.BILLETE_5000, Denominacion.MONEDA_500), 60);
+        assertThrows(IllegalArgumentException.class,
+                () -> c.cambiarPago(GeneradorFijo.pago(Denominacion.BILLETE_5000, Denominacion.MONEDA_1000)));
+        assertEquals(5500, c.getPago().total());
     }
 }
