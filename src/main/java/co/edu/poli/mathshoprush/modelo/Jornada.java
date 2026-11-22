@@ -492,8 +492,11 @@ public class Jornada {
      * Le pide sencillo al cliente cuando en la caja no hay efectivo para dar
      * el vuelto (R9a).
      * <p>
-     * El cliente cambia sus billetes por piezas que sí permiten dar el
-     * vuelto (el valor que paga no cambia) y gasta parte de su paciencia.
+     * El cliente cambia su pago por el total de la compra redondeado al
+     * siguiente múltiplo de $1.000. Si ese pago no es menor que el que había
+     * entregado, o si su vuelto tampoco se puede formar con la caja, paga el
+     * valor exacto y la venta se completa de inmediato. En cualquier caso
+     * gasta parte de su paciencia.
      * </p>
      *
      * @throws IllegalStateException si no hay un cliente esperando el vuelto
@@ -511,11 +514,20 @@ public class Jornada {
         caja.agregarTodo(mostrador);
         mostrador.vaciar();
         caja.quitarTodo(cliente.getPago());
-        Efectivo nuevoPago = Efectivo.conMenorCantidadDePiezas(cliente.getCompra().getTotal());
-        nuevoPago.agregarTodo(Efectivo.conMenorCantidadDePiezas(cliente.getVueltoEsperado()));
+
+        int total = cliente.getCompra().getTotal();
+        int redondeado = (total + 999) / 1000 * 1000;
+        int pagoNuevo = total;
+        if (redondeado < cliente.getPago().total() && caja.puedeFormar(redondeado - total)) {
+            pagoNuevo = redondeado;
+        }
+        Efectivo nuevoPago = Efectivo.conMenorCantidadDePiezas(pagoNuevo);
         cliente.cambiarPago(nuevoPago);
         caja.agregarTodo(nuevoPago);
         cliente.consumirPaciencia(FRACCION_PACIENCIA_SENCILLO * cliente.getPacienciaMaxima());
+        if (cliente.getVueltoEsperado() == 0) {
+            completarVenta(cliente, 0);
+        }
     }
 
     /**

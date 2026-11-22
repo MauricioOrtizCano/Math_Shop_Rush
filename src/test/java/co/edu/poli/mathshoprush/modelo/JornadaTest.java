@@ -209,26 +209,62 @@ class JornadaTest {
     }
 
     /**
-     * R9a: sin efectivo para el vuelto se puede pedir sencillo.
+     * R9a: al pedir sencillo, el cliente paga el total redondeado al
+     * siguiente múltiplo de $1.000 si la caja puede dar ese vuelto, y gasta
+     * parte de su paciencia.
      */
     @Test
-    void pedirSencilloPermiteDarElVuelto() {
-        Efectivo pobre = new Efectivo();
-        pobre.agregar(Denominacion.MONEDA_1000);
-        Jornada j = nueva(pobre, new CajaFuerte(), clienteBase(1));
+    void pedirSencilloRedondeaElPago() {
+        Efectivo caja = new Efectivo();
+        caja.agregar(Denominacion.MONEDA_500);
+        caja.agregar(Denominacion.MONEDA_200);
+        Cliente c = GeneradorFijo.cliente(1, TOTAL, GeneradorFijo.pago(Denominacion.BILLETE_50000), 60);
+        Jornada j = nueva(caja, new CajaFuerte(), c);
         j.avanzar(1.0);
         j.responderTotal(TOTAL);
         assertFalse(j.puedeDarVuelto());
         j.pedirSencillo();
+        assertEquals(700, j.getClienteActual().getVueltoEsperado());
         assertTrue(j.puedeDarVuelto());
-        assertEquals(1000 + 10000, j.getCaja().total());
         assertEquals(60 - Jornada.FRACCION_PACIENCIA_SENCILLO * 60,
                 j.getClienteActual().getPacienciaActual(), 1e-9);
-        j.ponerEnMostrador(Denominacion.BILLETE_2000);
-        j.ponerEnMostrador(Denominacion.BILLETE_2000);
         j.ponerEnMostrador(Denominacion.MONEDA_500);
         j.ponerEnMostrador(Denominacion.MONEDA_200);
         assertEquals(ResultadoVuelto.CORRECTO_CON_BONO, j.confirmarVuelto());
+    }
+
+    /**
+     * R9a: si la caja tampoco puede dar el vuelto del pago redondeado, el
+     * cliente paga el valor exacto y la venta se completa.
+     */
+    @Test
+    void pedirSencilloPagaExactoSiElRedondeoNoAlcanza() {
+        Cliente c = GeneradorFijo.cliente(1, TOTAL, GeneradorFijo.pago(Denominacion.BILLETE_50000), 60);
+        Jornada j = nueva(new Efectivo(), new CajaFuerte(), c);
+        j.avanzar(1.0);
+        j.responderTotal(TOTAL);
+        j.pedirSencillo();
+        assertEquals(1, j.getClientesAtendidos());
+        assertEquals(TOTAL, j.getGanancias());
+        assertEquals(TOTAL, j.getCaja().total());
+    }
+
+    /**
+     * R9a: si el pago redondeado no es menor que el que ya entregó, el
+     * cliente paga el valor exacto. Con $5.500 para una compra de $5.300,
+     * redondear a $6.000 sería pagar más.
+     */
+    @Test
+    void pedirSencilloPagaExactoSiElRedondeoNoEsMenor() {
+        Cliente c = GeneradorFijo.cliente(1, TOTAL,
+                GeneradorFijo.pago(Denominacion.BILLETE_5000, Denominacion.MONEDA_500), 60);
+        Jornada j = nueva(new Efectivo(), new CajaFuerte(), c);
+        j.avanzar(1.0);
+        j.responderTotal(TOTAL);
+        j.pedirSencillo();
+        assertEquals(1, j.getClientesAtendidos());
+        assertEquals(TOTAL, j.getGanancias());
+        assertEquals(TOTAL, j.getCaja().total());
     }
 
     /**
