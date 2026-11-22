@@ -132,9 +132,10 @@ public class Jornada {
     private final Efectivo caja;
 
     /**
-     * Caja fuerte compartida con la partida (se modifica al retirar dinero).
+     * Caja fuerte compartida con la partida: un saldo en pesos que disminuye
+     * cuando el jugador retira dinero durante la jornada (R9b).
      */
-    private final Efectivo cajaFuerte;
+    private final CajaFuerte cajaFuerte;
 
     /**
      * Efectivo que el jugador ha puesto en el mostrador como vuelto.
@@ -214,11 +215,12 @@ public class Jornada {
      * @param cajaInicial   efectivo con el que abre la caja registradora
      *                      (se copia)
      * @param cajaFuerte    caja fuerte de la partida; esta instancia se
-     *                      modifica cuando el jugador retira dinero
+     *                      comparte y su saldo disminuye cuando el jugador
+     *                      retira dinero
      * @param generador     generador de clientes, no nulo
      * @throws NullPointerException si algún parámetro es nulo
      */
-    public Jornada(ConfiguracionNivel configuracion, Efectivo cajaInicial, Efectivo cajaFuerte,
+    public Jornada(ConfiguracionNivel configuracion, Efectivo cajaInicial, CajaFuerte cajaFuerte,
             GeneradorClientes generador) {
         this.configuracion = Objects.requireNonNull(configuracion, "configuracion");
         this.caja = Objects.requireNonNull(cajaInicial, "cajaInicial").copia();
@@ -448,8 +450,7 @@ public class Jornada {
         }
         int esperado = cliente.getVueltoEsperado();
         if (mostrador.total() == esperado) {
-            boolean minimo = mostrador.totalPiezas()
-                    == Efectivo.conMenorCantidadDePiezas(esperado).totalPiezas();
+            boolean minimo = mostrador.totalPiezas() == Efectivo.conMenorCantidadDePiezas(esperado).totalPiezas();
             mostrador.vaciar();
             if (minimo) {
                 bonificaciones++;
@@ -516,22 +517,23 @@ public class Jornada {
 
     /**
      * Retira efectivo de la caja fuerte y lo pasa a la caja registradora
-     * (R9b). Consume {@link #SEGUNDOS_CAJA_FUERTE} segundos del reloj.
+     * (R9b). El jugador elige las denominaciones, sin superar el saldo
+     * disponible. Consume {@link #SEGUNDOS_CAJA_FUERTE} segundos del reloj;
+     * un pedido vacío no hace nada ni consume tiempo.
      *
-     * @param pedido piezas que se quieren retirar
-     * @throws IllegalArgumentException si la caja fuerte no tiene ese saldo
+     * @param pedido billetes y monedas que se quieren retirar
+     * @throws NullPointerException     si el pedido es nulo
+     * @throws IllegalArgumentException si el valor del pedido supera el
+     *                                  saldo de la caja fuerte
      * @throws IllegalStateException    si la jornada terminó
      */
     public void sacarDeCajaFuerte(Efectivo pedido) {
         verificarEnCurso();
         Objects.requireNonNull(pedido, "pedido");
-        if (!cajaFuerte.contiene(pedido)) {
-            throw new IllegalArgumentException("La caja fuerte no tiene ese saldo disponible");
-        }
         if (pedido.estaVacio()) {
             return;
         }
-        cajaFuerte.quitarTodo(pedido);
+        cajaFuerte.retirar(pedido);
         caja.agregarTodo(pedido);
         avanzarEnPasos(SEGUNDOS_CAJA_FUERTE);
     }
@@ -729,12 +731,12 @@ public class Jornada {
     }
 
     /**
-     * Devuelve una copia del efectivo de la caja fuerte.
+     * Devuelve el dinero disponible en la caja fuerte.
      *
-     * @return copia de la caja fuerte
+     * @return saldo de la caja fuerte, en pesos
      */
-    public Efectivo getCajaFuerte() {
-        return cajaFuerte.copia();
+    public int getSaldoCajaFuerte() {
+        return cajaFuerte.getSaldo();
     }
 
     /**

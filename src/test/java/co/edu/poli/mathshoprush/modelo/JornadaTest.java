@@ -37,13 +37,13 @@ class JornadaTest {
     }
 
     /**
-     * Crea una jornada de nivel 1 con la base inicial.
+     * Crea una jornada de nivel 1 con la base inicial y la caja fuerte vacía.
      *
      * @param clientes clientes que llegarán
      * @return jornada sin avanzar
      */
     private Jornada nueva(Cliente... clientes) {
-        return nueva(Partida.baseInicial(), Partida.reservaInicialCajaFuerte(), clientes);
+        return nueva(Partida.baseInicial(), new CajaFuerte(), clientes);
     }
 
     /**
@@ -54,7 +54,7 @@ class JornadaTest {
      * @param clientes   clientes que llegarán
      * @return jornada sin avanzar
      */
-    private Jornada nueva(Efectivo caja, Efectivo cajaFuerte, Cliente... clientes) {
+    private Jornada nueva(Efectivo caja, CajaFuerte cajaFuerte, Cliente... clientes) {
         return new Jornada(ConfiguracionNivel.deNivel(1), caja, cajaFuerte, new GeneradorFijo(clientes));
     }
 
@@ -215,7 +215,7 @@ class JornadaTest {
     void pedirSencilloPermiteDarElVuelto() {
         Efectivo pobre = new Efectivo();
         pobre.agregar(Denominacion.MONEDA_1000);
-        Jornada j = nueva(pobre, Partida.reservaInicialCajaFuerte(), clienteBase(1));
+        Jornada j = nueva(pobre, new CajaFuerte(), clienteBase(1));
         j.avanzar(1.0);
         j.responderTotal(TOTAL);
         assertFalse(j.puedeDarVuelto());
@@ -243,20 +243,23 @@ class JornadaTest {
     }
 
     /**
-     * R9b: sacar de la caja fuerte pasa el efectivo a la caja y consume tiempo.
+     * R9b: sacar de la caja fuerte pasa el efectivo a la caja, descuenta su
+     * valor del saldo y consume tiempo; no se puede retirar más del saldo.
      */
     @Test
     void cajaFuertePasaEfectivoYConsumeTiempo() {
-        Efectivo fuerte = Partida.reservaInicialCajaFuerte();
+        CajaFuerte fuerte = new CajaFuerte();
+        fuerte.depositar(20000);
         Jornada j = nueva(Partida.baseInicial(), fuerte, clienteBase(1));
         double antes = j.getSegundosTranscurridos();
         Efectivo pedido = GeneradorFijo.pago(Denominacion.BILLETE_5000);
         j.sacarDeCajaFuerte(pedido);
         assertEquals(Partida.baseInicial().total() + 5000, j.getCaja().total());
-        assertEquals(1, fuerte.cantidad(Denominacion.BILLETE_5000));
+        assertEquals(15000, j.getSaldoCajaFuerte());
         assertEquals(antes + Jornada.SEGUNDOS_CAJA_FUERTE, j.getSegundosTranscurridos(), 1e-6);
         Efectivo demasiado = GeneradorFijo.pago(Denominacion.BILLETE_50000);
         assertThrows(IllegalArgumentException.class, () -> j.sacarDeCajaFuerte(demasiado));
+        assertEquals(15000, j.getSaldoCajaFuerte());
     }
 
     /**

@@ -19,7 +19,7 @@ class PartidaTest {
         Jornada j = p.iniciarJornada(null);
         assertEquals(Partida.baseInicial().total(), j.getCaja().total());
         assertEquals(1, p.getNivel());
-        assertEquals(Partida.reservaInicialCajaFuerte().total(), p.getCajaFuerte().total());
+        assertEquals(0, p.getSaldoCajaFuerte(), "La caja fuerte empieza en $0");
     }
 
     /**
@@ -50,27 +50,28 @@ class PartidaTest {
         assertFalse(r.isAprobada());
         assertEquals(1, p.getNivel());
         assertEquals(1, p.getJornadasJugadas());
-        assertEquals(Partida.reservaInicialCajaFuerte().total() + Partida.baseInicial().total(),
-                p.getCajaFuerte().total());
+        assertEquals(Partida.baseInicial().total(), p.getSaldoCajaFuerte());
     }
 
     /**
-     * R20: desde la segunda jornada la base se retira de la caja fuerte.
+     * R18/R20: desde la segunda jornada la base se retira de la caja fuerte,
+     * y al cerrar se vuelve a depositar todo el efectivo de la caja.
      */
     @Test
     void segundaJornadaRetiraLaBaseDeLaCajaFuerte() {
         Partida p = new Partida(new GeneradorFijo());
         p.iniciarJornada(null).terminarAnticipadamente();
         p.finalizarJornada();
-        int saldo = p.getCajaFuerte().total();
+        int saldo = p.getSaldoCajaFuerte();
 
         Efectivo base = new Efectivo();
         base.agregar(Denominacion.MONEDA_1000, 5);
         Jornada j2 = p.iniciarJornada(base);
         assertEquals(5000, j2.getCaja().total());
-        assertEquals(saldo - 5000, p.getCajaFuerte().total());
+        assertEquals(saldo - 5000, p.getSaldoCajaFuerte());
         j2.terminarAnticipadamente();
         p.finalizarJornada();
+        assertEquals(saldo, p.getSaldoCajaFuerte(), "La base vuelve a la caja fuerte al cerrar");
 
         Efectivo demasiado = new Efectivo();
         demasiado.agregar(Denominacion.BILLETE_50000, 5);
@@ -85,12 +86,12 @@ class PartidaTest {
     void superarLosCuatroNivelesCompletaLaPartida() {
         Denominacion b50 = Denominacion.BILLETE_50000;
         Denominacion b20 = Denominacion.BILLETE_20000;
-        int[] metas = {20000, 50000, 90000, 150000};
+        int[] metas = { 20000, 50000, 90000, 150000 };
         Cliente[] clientes = {
-            GeneradorFijo.cliente(1, 20000, GeneradorFijo.pago(b20), 1000),
-            GeneradorFijo.cliente(2, 50000, GeneradorFijo.pago(b50), 1000),
-            GeneradorFijo.cliente(3, 90000, GeneradorFijo.pago(b50, b20, b20), 1000),
-            GeneradorFijo.cliente(4, 150000, GeneradorFijo.pago(b50, b50, b50), 1000)};
+                GeneradorFijo.cliente(1, 20000, GeneradorFijo.pago(b20), 1000),
+                GeneradorFijo.cliente(2, 50000, GeneradorFijo.pago(b50), 1000),
+                GeneradorFijo.cliente(3, 90000, GeneradorFijo.pago(b50, b20, b20), 1000),
+                GeneradorFijo.cliente(4, 150000, GeneradorFijo.pago(b50, b50, b50), 1000) };
         Partida p = new Partida(new GeneradorFijo(clientes));
         for (int i = 0; i < 4; i++) {
             assertEquals(i + 1, p.getNivel());

@@ -4,11 +4,11 @@ import java.util.Objects;
 
 /**
  * Una partida completa de Math Shop Rush: varias jornadas, el nivel actual
- * y la caja fuerte donde se guarda el efectivo entre jornadas.
+ * y la caja fuerte donde se guarda el dinero entre jornadas.
  * <p>
- * Reglas que implementa: R17 (avanzar de nivel), R18 (depositar el
- * efectivo en la caja fuerte), R19 (base inicial) y R20 (preparar la caja
- * en las jornadas siguientes).
+ * Reglas que implementa: R17 (avanzar de nivel), R18 (depositar el valor
+ * de la caja en la caja fuerte), R19 (base inicial) y R20 (preparar la
+ * caja en las jornadas siguientes retirando de la caja fuerte).
  * </p>
  */
 public class Partida {
@@ -19,9 +19,10 @@ public class Partida {
     private final GeneradorClientes generador;
 
     /**
-     * Caja fuerte donde se guarda el efectivo entre jornadas.
+     * Caja fuerte donde se guarda el dinero entre jornadas, como un saldo
+     * en pesos. Empieza en $0 y se comparte con cada jornada.
      */
-    private final Efectivo cajaFuerte = reservaInicialCajaFuerte();
+    private final CajaFuerte cajaFuerte = new CajaFuerte();
 
     /**
      * Nivel que se jugará en la próxima jornada.
@@ -49,7 +50,7 @@ public class Partida {
     private boolean completada;
 
     /**
-     * Crea una partida nueva en el nivel 1.
+     * Crea una partida nueva en el nivel 1, con la caja fuerte en $0.
      *
      * @param generador generador de clientes, no nulo
      * @throws NullPointerException si el generador es nulo
@@ -77,27 +78,6 @@ public class Partida {
     }
 
     /**
-     * Efectivo que tiene la caja fuerte al empezar la partida. La propuesta
-     * no define este valor; se asumió una reserva de $66.000 para que en la
-     * primera jornada se pueda pedir efectivo (R9b).
-     *
-     * @return reserva inicial de la caja fuerte
-     */
-    public static Efectivo reservaInicialCajaFuerte() {
-        Efectivo e = new Efectivo();
-        e.agregar(Denominacion.BILLETE_20000, 1);
-        e.agregar(Denominacion.BILLETE_10000, 1);
-        e.agregar(Denominacion.BILLETE_5000, 2);
-        e.agregar(Denominacion.BILLETE_2000, 3);
-        e.agregar(Denominacion.MONEDA_1000, 10);
-        e.agregar(Denominacion.MONEDA_500, 10);
-        e.agregar(Denominacion.MONEDA_200, 10);
-        e.agregar(Denominacion.MONEDA_100, 20);
-        e.agregar(Denominacion.MONEDA_50, 20);
-        return e;
-    }
-
-    /**
      * Indica si la próxima jornada es la primera de la partida.
      *
      * @return {@code true} si aún no se ha jugado ninguna
@@ -111,15 +91,17 @@ public class Partida {
      * <p>
      * En la primera jornada la caja abre con {@link #baseInicial()} y el
      * parámetro se ignora (R19). En las siguientes, el jugador retira de la
-     * caja fuerte el efectivo que quiera usar como base (R20).
+     * caja fuerte el efectivo que quiera usar como base, eligiendo las
+     * denominaciones, sin superar el saldo disponible (R20).
      * </p>
      *
      * @param base efectivo que se retira de la caja fuerte; puede ser
-     *             {@code null} o vacío
+     *             {@code null} o vacío, y entonces la caja abre sin base
      * @return la jornada creada
      * @throws IllegalStateException    si la partida ya se completó o la
      *                                  jornada anterior no se ha cerrado
-     * @throws IllegalArgumentException si la caja fuerte no tiene ese saldo
+     * @throws IllegalArgumentException si el valor de la base supera el
+     *                                  saldo de la caja fuerte
      */
     public Jornada iniciarJornada(Efectivo base) {
         if (completada) {
@@ -133,10 +115,7 @@ public class Partida {
             cajaInicial = baseInicial();
         } else {
             Efectivo pedido = base == null ? new Efectivo() : base;
-            if (!cajaFuerte.contiene(pedido)) {
-                throw new IllegalArgumentException("La caja fuerte no tiene ese saldo disponible");
-            }
-            cajaFuerte.quitarTodo(pedido);
+            cajaFuerte.retirar(pedido);
             cajaInicial = pedido.copia();
         }
         jornadaActual = new Jornada(ConfiguracionNivel.deNivel(nivel), cajaInicial,
@@ -146,9 +125,9 @@ public class Partida {
     }
 
     /**
-     * Cierra la jornada que terminó: deposita el efectivo de la caja en la
-     * caja fuerte (R18) y avanza de nivel si se cumplieron las condiciones
-     * (R17); si no, el nivel se repite.
+     * Cierra la jornada que terminó: deposita en la caja fuerte el valor
+     * total del efectivo de la caja (R18) y avanza de nivel si se cumplieron
+     * las condiciones (R17); si no, el nivel se repite.
      *
      * @return resumen de la jornada
      * @throws IllegalStateException si no hay una jornada terminada por cerrar
@@ -157,7 +136,7 @@ public class Partida {
         if (jornadaActual == null || jornadaFinalizada || !jornadaActual.isTerminada()) {
             throw new IllegalStateException("No hay una jornada terminada por cerrar");
         }
-        cajaFuerte.agregarTodo(jornadaActual.getCaja());
+        cajaFuerte.depositar(jornadaActual.getCaja().total());
         ResumenJornada resumen = jornadaActual.getResumen();
         jornadasJugadas++;
         jornadaFinalizada = true;
@@ -181,12 +160,12 @@ public class Partida {
     }
 
     /**
-     * Devuelve una copia del efectivo de la caja fuerte.
+     * Devuelve el dinero disponible en la caja fuerte.
      *
-     * @return copia de la caja fuerte
+     * @return saldo de la caja fuerte, en pesos
      */
-    public Efectivo getCajaFuerte() {
-        return cajaFuerte.copia();
+    public int getSaldoCajaFuerte() {
+        return cajaFuerte.getSaldo();
     }
 
     /**
