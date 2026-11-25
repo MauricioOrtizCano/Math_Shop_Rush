@@ -60,9 +60,10 @@ public class Partida {
     }
 
     /**
-     * Efectivo con el que abre la caja en la primera jornada (R19).
+     * Crea el efectivo inicial con el que abre la caja en la primera jornada (R19).
      *
-     * @return base inicial de $32.500
+     * @return efectivo con una base inicial de $32.500, distribuida
+     *         en billetes y monedas
      */
     public static Efectivo baseInicial() {
         Efectivo e = new Efectivo();
@@ -98,10 +99,10 @@ public class Partida {
      * @param base efectivo que se retira de la caja fuerte; puede ser
      *             {@code null} o vacío, y entonces la caja abre sin base
      * @return la jornada creada
-     * @throws IllegalStateException    si la partida ya se completó o la
-     *                                  jornada anterior no se ha cerrado
+     * @throws IllegalStateException si la partida ya se completó o la
+     *                               jornada anterior no se ha cerrado
      * @throws IllegalArgumentException si el valor de la base supera el
-     *                                  saldo de la caja fuerte
+     *                                  saldo disponible
      */
     public Jornada iniciarJornada(Efectivo base) {
         if (completada) {

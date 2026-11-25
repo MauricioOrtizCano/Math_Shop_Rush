@@ -31,8 +31,9 @@ public class Efectivo {
      * Agrega piezas de una denominación.
      *
      * @param denominacion denominación a agregar, no nula
-     * @param cantidad     número de piezas, no negativo
+     * @param cantidad número de piezas, no negativo
      * @throws IllegalArgumentException si la cantidad es negativa
+     * @throws NullPointerException si la denominación es nula
      */
     public void agregar(Denominacion denominacion, int cantidad) {
         Objects.requireNonNull(denominacion, "denominacion");
@@ -54,9 +55,10 @@ public class Efectivo {
     }
 
     /**
-     * Agrega todas las piezas de otro efectivo (sin modificarlo).
+     * Agrega todas las piezas de otro efectivo sin modificar el original.
      *
      * @param otro efectivo cuyas piezas se copian a este
+     * @throws NullPointerException si el efectivo recibido es nulo
      */
     public void agregarTodo(Efectivo otro) {
         Efectivo origen = otro.copia();
@@ -103,8 +105,9 @@ public class Efectivo {
      * Quita todas las piezas de otro efectivo. Si este efectivo no las
      * contiene todas, no se modifica nada.
      *
-     * @param otro piezas que se deben retirar
-     * @throws IllegalArgumentException si este efectivo no contiene las piezas
+     * @param otro efectivo cuyas piezas se deben retirar
+     * @throws IllegalArgumentException si este efectivo no contiene las piezas solicitadas
+     * @throws NullPointerException si el efectivo recibido es nulo
      */
     public void quitarTodo(Efectivo otro) {
         if (!contiene(otro)) {
@@ -119,8 +122,10 @@ public class Efectivo {
     /**
      * Indica si este efectivo tiene al menos las piezas de otro.
      *
-     * @param otro piezas a comprobar
-     * @return {@code true} si hay suficientes piezas de cada denominación
+     * @param otro efectivo cuyas piezas se desean comprobar
+     * @return {@code true} si hay suficientes piezas de cada denominación;
+     *         {@code false} en caso contrario
+     * @throws NullPointerException si el efectivo recibido es nulo
      */
     public boolean contiene(Efectivo otro) {
         for (Map.Entry<Denominacion, Integer> e : otro.piezas.entrySet()) {

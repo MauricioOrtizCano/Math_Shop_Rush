@@ -54,17 +54,17 @@ public final class ResumenJornada {
     private final boolean perdidaPorReputacion;
 
     /**
-     * Crea el resumen de una jornada.
+     * Crea el resumen con los resultados obtenidos durante una jornada.
      *
-     * @param nivel                nivel jugado
-     * @param clientesAtendidos    clientes atendidos
-     * @param errores              errores cometidos
-     * @param bonificaciones       bonificaciones obtenidas
-     * @param ganancias            ganancias en pesos
-     * @param reputacionFinal      reputación final
-     * @param metaGanancias        meta del nivel
-     * @param aprobada             si se superó el nivel
-     * @param perdidaPorReputacion si terminó por reputación en cero
+     * @param nivel nivel del juego que se realizó
+     * @param clientesAtendidos cantidad de clientes atendidos con venta completada
+     * @param errores cantidad total de errores cometidos
+     * @param bonificaciones cantidad de bonificaciones obtenidas
+     * @param ganancias ganancias obtenidas durante la jornada, en pesos
+     * @param reputacionFinal reputación al finalizar la jornada
+     * @param metaGanancias meta de ganancias establecida para el nivel, en pesos
+     * @param aprobada indica si el jugador superó el nivel
+     * @param perdidaPorReputacion indica si la jornada terminó por reputación en cero
      */
     public ResumenJornada(int nivel, int clientesAtendidos, int errores, int bonificaciones,
             int ganancias, int reputacionFinal, int metaGanancias, boolean aprobada,

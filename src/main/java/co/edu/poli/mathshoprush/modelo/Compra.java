@@ -19,11 +19,17 @@ public final class Compra {
     private final int total;
 
     /**
-     * Crea una compra.
-     *
-     * @param productos productos comprados, no nulos ni vacíos
-     * @throws IllegalArgumentException si la lista es nula o vacía
-     */
+     
+/**
+ * Crea una compra a partir de una lista de productos.
+ * Calcula automáticamente el valor total sumando los precios
+ * de todos los productos y conserva una copia inmutable de la lista.
+ *
+ * @param productos lista de productos comprados, no nula ni vacía
+ * @throws IllegalArgumentException si la lista es nula o está vacía
+ * @throws NullPointerException si la lista contiene algún producto nulo
+ */
+
     public Compra(List<Producto> productos) {
         if (productos == null || productos.isEmpty()) {
             throw new IllegalArgumentException("La compra debe tener al menos un producto");

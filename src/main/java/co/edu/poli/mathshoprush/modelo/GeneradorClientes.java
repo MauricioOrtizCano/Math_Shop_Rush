@@ -47,12 +47,15 @@ public class GeneradorClientes {
     /**
      * Genera un cliente nuevo para el nivel indicado.
      * <p>
-     * Los precios son múltiplos del paso del nivel. El pago nunca incluye
-     * piezas sobrantes, salvo en los clientes que redondean (regla R5).
+     * Crea una compra con productos y precios aleatorios, genera el pago
+     * correspondiente y determina si el cliente redondea el vuelto.
+     * Los precios son múltiplos del paso del nivel (reglas R4 y R5).
      * </p>
      *
-     * @param configuracion parámetros del nivel
-     * @return nuevo cliente
+     * @param configuracion parámetros del nivel que determinan las características
+     *                      del cliente
+     * @return nuevo cliente generado
+     * @throws NullPointerException si la configuración es nula
      */
     public Cliente generar(ConfiguracionNivel configuracion) {
         int cantidad = configuracion.getMinProductos()
@@ -81,7 +84,9 @@ public class GeneradorClientes {
      * Calcula cuánto tiempo pasará hasta que llegue el siguiente cliente.
      *
      * @param configuracion parámetros del nivel
-     * @return segundos de espera (entre 70 % y 130 % del intervalo del nivel)
+     * @return segundos de espera, entre el 70 % y el 130 % del intervalo
+     *         configurado
+     * @throws NullPointerException si la configuración es nula
      */
     public double proximoIntervalo(ConfiguracionNivel configuracion) {
         return configuracion.getIntervaloLlegadaSegundos() * (0.7 + 0.6 * azar.nextDouble());
@@ -135,11 +140,12 @@ public class GeneradorClientes {
     }
 
     /**
-     * Elimina las piezas que sobran para que ninguna se pueda retirar sin
-     * dejar de cubrir el total.
+     * Elimina las piezas que sobran para que ninguna se pueda retirar
+     * sin dejar de cubrir el total de la compra.
      *
-     * @param piezas piezas del pago (se modifica la lista)
-     * @param total  total de la compra
+     * @param piezas piezas del pago que se modifican durante el proceso
+     * @param total total de la compra, en pesos
+     * @throws NullPointerException si la lista de piezas es nula
      */
     private void quitarSobrantes(List<Denominacion> piezas, int total) {
         piezas.sort((a, b) -> Integer.compare(a.getValor(), b.getValor()));

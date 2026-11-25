@@ -72,17 +72,17 @@ public final class ConfiguracionNivel {
     private final int metaGanancias;
 
     /**
-     * Construye la configuración de un nivel.
+     * Construye la configuración de un nivel con sus parámetros de dificultad.
      *
-     * @param nivel                    número del nivel
-     * @param minProductos             mínimo de productos por cliente
-     * @param maxProductos             máximo de productos por cliente
-     * @param paso                     múltiplo de los precios
-     * @param precioMaximo             precio máximo de un producto
-     * @param pacienciaSegundos        paciencia de cada cliente
-     * @param probabilidadRedondeo     probabilidad de redondear el vuelto
-     * @param intervaloLlegadaSegundos tiempo entre llegadas de clientes
-     * @param metaGanancias            meta de ganancias del nivel
+     * @param nivel número del nivel
+     * @param minProductos mínimo de productos por cliente
+     * @param maxProductos máximo de productos por cliente
+     * @param paso múltiplo de los precios
+     * @param precioMaximo precio máximo de un producto, en pesos
+     * @param pacienciaSegundos paciencia de cada cliente, en segundos
+     * @param probabilidadRedondeo probabilidad de redondear el vuelto, entre 0 y 1
+     * @param intervaloLlegadaSegundos tiempo promedio entre llegadas de clientes
+     * @param metaGanancias meta de ganancias del nivel, en pesos
      */
     private ConfiguracionNivel(int nivel, int minProductos, int maxProductos, int paso,
             int precioMaximo, double pacienciaSegundos, double probabilidadRedondeo,
@@ -99,11 +99,12 @@ public final class ConfiguracionNivel {
     }
 
     /**
-     * Obtiene la configuración de un nivel.
+     * Obtiene la configuración correspondiente a un nivel del juego.
      *
-     * @param nivel nivel deseado, entre 1 y 4
-     * @return configuración del nivel
-     * @throws IllegalArgumentException si el nivel está fuera de rango
+     * @param nivel nivel deseado, entre {@value #NIVEL_MINIMO} y
+     *              {@value #NIVEL_MAXIMO}
+     * @return configuración del nivel solicitado
+     * @throws IllegalArgumentException si el nivel está fuera del rango permitido
      */
     public static ConfiguracionNivel deNivel(int nivel) {
         switch (nivel) {

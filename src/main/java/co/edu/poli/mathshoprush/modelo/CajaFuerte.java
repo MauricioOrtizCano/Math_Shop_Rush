@@ -40,7 +40,8 @@ public class CajaFuerte {
      * Se permite depositar $0, por ejemplo cuando la caja termina la
      * jornada vacía.
      *
-     * @param valor monto a depositar, en pesos
+     * @param valor monto a depositar, en pesos; debe ser no negativo
+     *        y múltiplo de $50
      * @throws IllegalArgumentException si el monto es negativo o no es
      *                                  múltiplo de $50
      */

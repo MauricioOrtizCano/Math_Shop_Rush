@@ -16,12 +16,12 @@ public final class Producto {
     private final int precio;
 
     /**
-     * Crea un producto.
+     * Crea un producto con su nombre y precio.
      *
-     * @param nombre nombre no vacío del producto
-     * @param precio precio en pesos, mayor que cero
-     * @throws IllegalArgumentException si el nombre es nulo o vacío, o el
-     *                                  precio no es positivo
+     * @param nombre nombre del producto; no puede ser nulo ni estar vacío
+     * @param precio precio del producto en pesos; debe ser mayor que cero
+     * @throws IllegalArgumentException si el nombre es nulo o está vacío,
+     *                                  o si el precio es menor o igual a cero
      */
     public Producto(String nombre, int precio) {
         if (nombre == null || nombre.isBlank()) {
